@@ -273,6 +273,8 @@ function init()
 	document.getElementsByClassName("number")[0].innerHTML = UID;
 
 	getMessages(1);
+
+	document.getElementById("message-list").scrollTop = "100000px";
 }
 
 function showMessage(mes, eUID, MID = 0)
