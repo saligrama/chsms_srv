@@ -98,22 +98,14 @@ function endLoginSession() {
     session_destroy();
 }
 
-function checkSession($cid) { 
-
-	echo $cid;
-	echo $_SESSION["UID"];
+function checkSession($cid) {
 
 	if (!isset($_SESSION["UID"]))
 		return false;
 
 	$p = dbQuery_new("SELECT UID FROM conversation_participants WHERE CID=:cid", ["cid" => $cid]);
 
-	foreach ($p as $u) {
-		if ($_SESSION["UID"] == $u["UID"])
-			return true;
-	}
-
-	return false;
+	return !empty($p);
 
 }
 

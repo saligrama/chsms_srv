@@ -29,8 +29,18 @@
 	margin-left: -5px;
 }
 
+.main {
+	padding: 50px 60px;
+}
+
 .panel {
-	max-width: 380px;
+	max-width: 400px;
+	margin: auto;
+}
+
+.panel-heading {
+	margin-left: -15px;
+	margin-right: -15px;
 }
 
 </style>

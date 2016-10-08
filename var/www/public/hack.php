@@ -1,18 +1,5 @@
 <!DOCTYPE html>
 
-<?php
-
-require("../includes/functions.php");
-
-/*if (!session_id())
-	session_start();
-
-if (!checkSession($_GET["CID"]))
-	redirectTo('/login.php');
-*/
-
-?>
-
 <head>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -20,6 +7,20 @@ if (!checkSession($_GET["CID"]))
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
 <style>
+
+.number {
+	position: fixed;
+	top: 40px;
+	left: 30px;
+	border-radius: 50%;
+	width: 60px;
+	height: 60px;
+	background-color: #666;
+	text-align: center;
+	padding-top: 15px;
+	color: white;
+	font-size: 20px;
+}
 
 .main {
         max-width: 500px;
@@ -177,6 +178,12 @@ if (!checkSession($_GET["CID"]))
 .message-pic {
 	display: inline-block;
 	vertical-align: top;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background-color: #666;
+	color: white;
+	padding: 4px 0 0 4px;
 }
 
 .message-pic img {
@@ -207,6 +214,8 @@ if (!checkSession($_GET["CID"]))
 </style>
 
 <script>
+
+var UID = Math.floor(1000 * Math.random());
 
 function db_Connect()
 {
@@ -261,10 +270,12 @@ function init()
 {
         window.setInterval(callback, 100);
 
+	document.getElementsByClassName("number")[0].innerHTML = UID;
+
 	getMessages(1);
 }
 
-function showMessage(mes, UID, MID = 0)
+function showMessage(mes, eUID, MID = 0)
 {
 	if(typeof showMessage.TID == 'undefined')
                 showMessage.TID = 0;
@@ -273,9 +284,12 @@ function showMessage(mes, UID, MID = 0)
         var ul = document.getElementById("message-list");
         ul.appendChild(li);
 
-        li.outerHTML = "<li class=\"message-li element-load element-loading\"" + "data-uid='" + <?php echo $_GET["UID"] ?> + "' " + (MID ? ("data-mid='" + MID) : ("data-tid='" + ++(showMessage.TID))) + "'>" +
-                                "<div class=" + (UID == <?php echo $_GET['UID']; ?> ? "'message-li-sent'" : "'message-li-from'" ) + ">" +
-                                        "<div class=\"message-wrapper\">" +
+        li.outerHTML = "<li class=\"message-li element-load element-loading\"" + "data-uid='" + eUID + "' " + (MID ? ("data-mid='" + MID) : ("data-tid='" + ++(showMessage.TID))) + "'>" +
+                                "<div class=" + (eUID == UID ? "'message-li-sent'" : "'message-li-from'" ) + ">" +
+                                        ((eUID != UID ) ? "<div class='message-pic'>" +
+                                        			eUID +
+                                        		 "</div>" : "") +
+					"<div class=\"message-wrapper\">" +
                                                 "<div class=\"messages-message\">" +
                                                         "<p class=\"messages-message-text\">" +
                                                                  mes +
@@ -287,6 +301,8 @@ function showMessage(mes, UID, MID = 0)
                                         "</div>" +
                                 "</div>" +
                         "</li>";
+
+	li.style.backgroundColor = UID.toString(16);
 
 	return showMessage.TID;
 }
@@ -303,7 +319,7 @@ function sendMessage(mes)
 	else
 		sendMessage.lastTime = time;
 
-	var tid = showMessage(mes, <?php echo $_GET["UID"]; ?>);
+	var tid = showMessage(mes, UID);
 
 	scrollToBottom(document.getElementById("message-list"), 400);
 
@@ -346,7 +362,7 @@ function sendMessage(mes)
 
 	xhttp.open("POST", "messages.php", true);
 	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	xhttp.send("UID=" + <?php echo $_GET["UID"]; ?> + "&CID=1&Mes=" + mes + "");
+	xhttp.send("UID=" + UID + "&CID=1&Mes=" + mes + "");
 }
 
 function messageKey(e, elem)
@@ -398,7 +414,9 @@ function getMessages(CID)
 </head>
 
 <body onload="init()" class="body-loading">
-        <div class="main">
+        <div class="number"></div>
+
+	<div class="main">
                 <div class="main-header">
                 </div>
                 <div class="main-tabs">
