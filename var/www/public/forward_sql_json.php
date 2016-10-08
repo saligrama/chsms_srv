@@ -11,13 +11,13 @@
     foreach($result as $row) {
 	$arr[] = $row;
     }
-
+    print_r($arr);
     $filename = 'user' . uniqid() . '.json';
     
-    $fp = fopen('/var/www/public/' . $filename, 'w');
+    $fp = fopen('/var/www/public/jsons/' . $filename, 'w');
     fwrite($fp, json_encode($arr));
     fclose($fp);
 
-    header('Location: /' . $filename);
+    header('Location: /jsons/' . $filename);
 
 ?>

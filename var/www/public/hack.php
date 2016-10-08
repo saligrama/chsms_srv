@@ -1,5 +1,18 @@
 <!DOCTYPE html>
 
+<?php
+
+require("../includes/functions.php");
+
+/*if (!session_id())
+	session_start();
+
+if (!checkSession($_GET["CID"]))
+	redirectTo('/login.php');
+*/
+
+?>
+
 <head>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -182,6 +195,11 @@
 	color: #777;
 }
 
+.message-info-date-error {
+	color: #c22;
+	font-weight: 500;
+}
+
 .message-li-sent .message-info {
 	text-align: right;
 }
@@ -189,6 +207,17 @@
 </style>
 
 <script>
+
+function db_Connect()
+{
+	var xhttp;
+	if(window.XMLHttpRequest)
+    		xhttp = new XMLHttpRequest();
+    	else
+    		xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+
+	return xhttp;
+}
 
 function checkLoaders()
 {
@@ -222,17 +251,44 @@ function scrollToBottom(e, t)
 
 }
 
-
-
 function callback()
 {
 	checkLoaders();
-	setMessageTimes();
+	getMessages(1);
 }
 
 function init()
 {
-        window.setInterval(callback, 50);
+        window.setInterval(callback, 100);
+
+	getMessages(1);
+}
+
+function showMessage(mes, UID, MID = 0)
+{
+	if(typeof showMessage.TID == 'undefined')
+                showMessage.TID = 0;
+
+	var li = document.createElement("LI");
+        var ul = document.getElementById("message-list");
+        ul.appendChild(li);
+
+        li.outerHTML = "<li class=\"message-li element-load element-loading\"" + "data-uid='" + <?php echo $_GET["UID"] ?> + "' " + (MID ? ("data-mid='" + MID) : ("data-tid='" + ++(showMessage.TID))) + "'>" +
+                                "<div class=" + (UID == <?php echo $_GET['UID']; ?> ? "'message-li-sent'" : "'message-li-from'" ) + ">" +
+                                        "<div class=\"message-wrapper\">" +
+                                                "<div class=\"messages-message\">" +
+                                                        "<p class=\"messages-message-text\">" +
+                                                                 mes +
+                                                        "</p>" +
+                                                "</div>" +
+                                                "<div class=\"message-info\">" +
+                                                        "<span class=\"message-info-date\">Sent</span>" +
+                                                "</div>" +
+                                        "</div>" +
+                                "</div>" +
+                        "</li>";
+
+	return showMessage.TID;
 }
 
 function sendMessage(mes)
@@ -247,26 +303,50 @@ function sendMessage(mes)
 	else
 		sendMessage.lastTime = time;
 
-	var li = document.createElement("LI");
-	var ul = document.getElementById("message-list");
-	ul.appendChild(li);
+	var tid = showMessage(mes, <?php echo $_GET["UID"]; ?>);
 
-	li.outerHTML = " <li class=\"message-li element-load element-loading\">" +
-                                "<div class=\"message-li-sent\">" +
-                                        "<div class=\"message-wrapper\">" +
-                                                "<div class=\"messages-message\">" +
-                                                        "<p class=\"messages-message-text\">" +
-                                                        	 mes +  
-                                                	"</p>" +
-                                        	"</div>" +
-						"<div class=\"message-info\">" +
-                                                	"<span class=\"message-info-date\">September 20th</span>" +
-                                                "</div>" +
-                                	"</div>" +
-              	        	"</div>" +
-			"</li>";
+	scrollToBottom(document.getElementById("message-list"), 400);
 
-	scrollToBottom(ul, 400);
+        var xhttp = db_Connect();
+
+        xhttp.onreadystatechange = function()
+        {
+                if(this.readyState == 4 && this.status == 200)
+		{
+			var ul = document.getElementById("message-list");
+			var lis = ul.getElementsByClassName("message-li");
+//alert(this.responseText);
+
+			if(this.responseText == 0)
+			{
+				for(var i = 0; i < lis.length; i++)
+                                        if(lis[i].dataset.tid == tid)
+					{
+                                                var date = lis[i].getElementsByClassName("message-info-date")[0];
+						date.innerHTML = "Error sending";
+						date.classList.add("message-info-date-error");
+					}
+			}
+			else
+			{
+				var array = JSON.parse(this.responseText);
+
+				for(var i = 0; i < lis.length; i++)
+				{
+					if(lis[i].dataset.tid == tid)
+					{
+						lis[i].getElementsByClassName("message-info-date")[0].innerHTML = "Sent";
+        					lis[i].dataset.tid = 0;
+						lis[i].dataset.mid = parseInt(array[0]["MID"]);
+					}
+				}
+			}
+		}
+	};
+
+	xhttp.open("POST", "messages.php", true);
+	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	xhttp.send("UID=" + <?php echo $_GET["UID"]; ?> + "&CID=1&Mes=" + mes + "");
 }
 
 function messageKey(e, elem)
@@ -279,10 +359,43 @@ function messageKey(e, elem)
 	}
 }
 
+function getMessages(CID)
+{
+	var ul = document.getElementById("message-list");
+	var lis = ul.getElementsByClassName("message-li");
+
+	var xhttp = db_Connect();
+
+        xhttp.onreadystatechange = function()
+        {
+                if(this.readyState == 4 && this.status == 200)
+                {
+		//alert(this.responseText);
+			var array = JSON.parse(this.responseText);
+
+			var mids = [];
+			for(var i = 0; i < lis.length; i++)
+				mids[i] = parseInt(lis[i].dataset.mid);
+
+			for(var i = 0; i < array.length; i++)
+			{
+				if(mids.indexOf(parseInt(array[i]["MID"])) == -1)
+				{
+					showMessage(array[i]["text"], parseInt(array[i]["UID"]), parseInt(array[i]["MID"]));
+					scrollToBottom(document.getElementById("message-list"), 400);
+				}
+			}
+		}
+        };
+
+	        xhttp.open("POST", "messages.php", true);
+		xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xhttp.send("getMes=1&CID=" + CID);
+}
+
 </script>
 
 </head>
-
 
 <body onload="init()" class="body-loading">
         <div class="main">
@@ -295,37 +408,6 @@ function messageKey(e, elem)
                 <div class="main-body element-load element-loading">
 			<div class="conversation">
 				<ul class="message-list" id="message-list">
-                        		<li class="message-li element-load element-loading">
-						<div class="message-li-sent">
-							<div class="message-wrapper">
-	             	        	        		<div class="messages-message">
-                                	        			<p class="messages-message-text">
-                                        	        			hey!HeyHEY1
-                                                			</p>
-                                        			</div>
-								<div class="message-info">
-                                                                	<span class="message-info-date">September 20th</span>
-                                                        	</div>
-                        				</div>
-						</div>
-					</li>
-					<li class="message-li element-load element-loading">
-	                             		<div class="message-li-from">
-				   			<div class="message-pic">
-                                	        		<img src="https://lh3.googleusercontent.com/-o61DkUDu9fU/AAAAAAAAAAI/AAAAAAAAE-w/2shgvs8haB0/s32-c-k-no/photo.jpg"></img>
-							</div>
-							<div class="message-wrapper">
-								<div class="messages-message">
-	                                                		<p class="messages-message-text">
-                                                        			hey!HeyHEY1
-                                                			</p>
-                                        			</div>
-								<div class="message-info">
-                                                                        <span class="message-info-date">September 20th</span>
-                                                                </div>
-    							</div>
-						</div>         
-					</li>                          
 				</ul>
 				<div class="new-message">
 					<input onkeydown="messageKey(event, this);" type="text" class="form-control" placeholder="Send a message"></input>
