@@ -11,7 +11,7 @@
     foreach($result as $row) {
 	$arr[] = $row;
     }
-    print_r($arr);
+
     $filename = 'user' . uniqid() . '.json';
     
     $fp = fopen('/var/www/public/' . $filename, 'w');
