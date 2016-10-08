@@ -1,14 +1,22 @@
 <?php
 
-    require("config.php");
+    require("functions.php");
 
-    $result = json_encode(dbQuery("SELECT * FROM users WHERE id = :uid", ["uid" => $uid]));
+    $uid = $_GET["uid"];
 
+    $conn = db_connect();
+    $result = db_query($conn, "SELECT * FROM users WHERE id = :uid", ["uid" => $uid]);
+
+    $arr = [];
+    foreach($result as $row) {
+	$arr[] = $row;
+    }
+    print_r($arr);
     $filename = 'user' . uniqid() . '.json';
     
-    $fp = fopen($filename, 'w');
-    fwrite($fp, $result);
-    fclose();
+    $fp = fopen('/var/www/public/' . $filename, 'w');
+    fwrite($fp, json_encode($arr));
+    fclose($fp);
 
     header('Location: /' . $filename);
 
