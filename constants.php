@@ -1,8 +1,9 @@
 <?php
 
-    define(MYSQL_USERNAME, "root");
-    define(MYSQL_PASSWORD, "root");
-    define(MYSQL_HOSTNAME, "localhost");
-    define(MYSQL_DBNAME, "CHSMS");
-
+    function set_globals() {
+	    $GLOBALS["MYSQL_USERNAME"] = "root";
+	    $GLOBALS["MYSQL_PASSWORD"] = "root";
+	    $GLOBALS["MYSQL_HOSTNAME"] = "localhost";
+	    $GLOBALS["MYSQL_DBNAME"] = "CHSMS";
+    }
 ?>
